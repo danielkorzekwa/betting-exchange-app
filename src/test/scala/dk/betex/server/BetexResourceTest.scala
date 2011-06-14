@@ -13,19 +13,144 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertTrue(responseMsg.contains("Betting Exchange Server Copyright 2011 Daniel Korzekwa(http://danmachine.com)"));
   }
 
+  /**Test scenarios for createMarket.*/
+
   @Test
-  def create_market() {
-    val marketId = "123"
-    val webResource = resource();
-    val responseMsg = webResource.path("/createMarket").queryParam("marketId", marketId).get(classOf[String])
-    assertEquals("Not implemented yet.MarketId=" + marketId, responseMsg);
+  def create_market_succces() {
+    val webResource = resource()
+    val responseMsg = createMarket(123)
+    assertEquals("OK", responseMsg)
+
+    val markets = webResource.path("/getMarkets").get(classOf[String])
+    assertEquals("""{"markets":[{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
   }
 
   @Test
-  def get_markets() {
-    val marketId = "123"
-    val webResource = resource();
-    val responseMsg = webResource.path("/getMarkets").get(classOf[String])
-    assertEquals("Not implemented yet.", responseMsg);
+  def create_two_market2_succces() {
+    val webResource = resource()
+    val responseMsg1 = createMarket(123)
+    assertEquals("OK", responseMsg1)
+
+    val responseMsg2 = createMarket(124)
+    assertEquals("OK", responseMsg2)
+
+    val markets = webResource.path("/getMarkets").get(classOf[String])
+    assertEquals("""{"markets":[{"marketId":124,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]},{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
+  }
+
+  @Test
+  def create_market_failed_missing_market_id() {
+    val webResource = resource()
+    val responseMsg = webResource.path("/createMarket").
+      queryParam("marketName", "Barcelona - Real Madryt").
+      queryParam("eventName", "Spanish Soccer").
+      queryParam("numOfWinners", "1").
+      queryParam("marketTime", "2000").
+      queryParam("runners", "1:Barcelona,2:Real Madryt").
+      get(classOf[String])
+    assertEquals("INPUT_VALIDATION_ERROR:requirement failed", responseMsg);
+  }
+
+  /**Tests for getMarkets.*/
+  @Test
+  def get_markets_no_markets_exist() {
+    val webResource = resource()
+    val markets = webResource.path("/getMarkets").get(classOf[String])
+    assertEquals("""{"markets":[]}""", markets)
+  }
+
+  /**Test scenarios for placeBet.*/
+  @Test
+  def place_back_bet() {
+    createMarket(1)
+
+    val webResource = resource()
+    val responseMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "1").
+      queryParam("runnerId", "11").
+      queryParam("placedDate", "40000").get(classOf[String])
+    assertEquals("OK", responseMsg)
+
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("...", bestPricesMsg)
+  }
+
+  @Test
+  def place_lay_bet() {
+    createMarket(1)
+
+    val webResource = resource()
+    val responseMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "LAY").
+      queryParam("marketId", "1").
+      queryParam("runnerId", "11").
+      queryParam("placedDate", "40000").get(classOf[String])
+    assertEquals("OK", responseMsg)
+
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("...", bestPricesMsg)
+  }
+
+  @Test
+  def place_back_bet_wrong_bet_type() {
+    val webResource = resource()
+    val responseMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK_WRONG").
+      queryParam("marketId", "1").
+      queryParam("runnerId", "11").
+      queryParam("placedDate", "40000").get(classOf[String])
+
+    assertEquals("INPUT_VALIDATION_ERROR:BACK_WRONG (of class java.lang.String)", responseMsg)
+  }
+
+  @Test
+  def place_back_bet_market_doesnt_exists() {
+    val webResource = resource()
+    val responseMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "1").
+      queryParam("runnerId", "11").
+      queryParam("placedDate", "40000").get(classOf[String])
+
+    assertEquals("ERROR:key not found: 1", responseMsg)
+  }
+
+  /**Tests for getBestPrices.*/
+  @Test
+  def get_best_prices_market_doesnt_exists() {
+    val webResource = resource()
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("ERROR:key not found: 1", bestPricesMsg)
+  }
+  
+  private def createMarket(marketId: Long): String = {
+    val webResource = resource()
+    val responseMsg = webResource.path("/createMarket").
+      queryParam("marketId", marketId.toString).
+      queryParam("marketName", "Man Utd - Arsenal").
+      queryParam("eventName", "English Soccer").
+      queryParam("numOfWinners", "1").
+      queryParam("marketTime", "1000").
+      queryParam("runners", "11:Man Utd,12:Arsenal").
+      get(classOf[String])
+
+    responseMsg
   }
 }
