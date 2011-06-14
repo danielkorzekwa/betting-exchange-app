@@ -18,7 +18,7 @@ object BetexServerApp extends App {
   
   println("Starting Betex Server...");
   val threadSelector =
-    GrizzlyWebContainerFactory.create(baseUri, initParams);
+  GrizzlyWebContainerFactory.create(baseUri, initParams);
   println("Betex Server started with WADL available at %sapplication.wadl\nTry out %s\nHit enter to stop it...".format(baseUri, baseUri));
   System.in.read();
   threadSelector.stopEndpoint();
