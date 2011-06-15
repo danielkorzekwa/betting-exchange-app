@@ -4,7 +4,7 @@ import scala.collection.JavaConversions._
 import com.sun.jersey.api.container.grizzly.GrizzlyWebContainerFactory
 
 /**
- * Scala application to start Betex Server.
+ * The main class for Betex Server application.
  *
  * @author korzekwad
  */
