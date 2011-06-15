@@ -77,7 +77,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("OK", responseMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
-    assertEquals("...", bestPricesMsg)
+    assertEquals("""{"marketPrices":[{"runnerId":11,"bestToLayPrice":2.2,"bestToLayTotal":10},{"runnerId":12}]}""", bestPricesMsg)
   }
 
   @Test
@@ -97,7 +97,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("OK", responseMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
-    assertEquals("...", bestPricesMsg)
+    assertEquals("""{"marketPrices":[{"runnerId":11,"bestToBackPrice":2.2,"bestToBackTotal":10},{"runnerId":12}]}""", bestPricesMsg)
   }
 
   @Test
@@ -113,7 +113,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
 
-    assertEquals("INPUT_VALIDATION_ERROR:BACK_WRONG (of class java.lang.String)", responseMsg)
+    assertEquals("INPUT_VALIDATION_ERROR:None.get", responseMsg)
   }
 
   @Test
@@ -139,7 +139,107 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("ERROR:key not found: 1", bestPricesMsg)
   }
-  
+
+  /**Tests for cancelBets*/
+  @Test
+  def cancel_bets_market_doesnt_exists() {
+    val webResource = resource()
+    val cancelBetsMsg = webResource.path("/cancelBets").
+      queryParam("userId", "100").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "1").
+      queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("ERROR:key not found: 1", cancelBetsMsg)
+  }
+
+  @Test
+  def cancel_bets_runner_doesnt_exists() {
+    createMarket(123)
+    val webResource = resource()
+    val cancelBetsMsg = webResource.path("/cancelBets").
+      queryParam("userId", "100").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "13").get(classOf[String])
+    assertEquals("OK", cancelBetsMsg)
+  }
+
+  @Test
+  def cancel_bets_nothing_to_cancelled() {
+    createMarket(123)
+    val webResource = resource()
+    val cancelBetsMsg = webResource.path("/cancelBets").
+      queryParam("userId", "100").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("OK", cancelBetsMsg)
+  }
+
+  @Test
+  def cancel_bets_back_bet_is_cancelled_partially() {
+    createMarket(123)
+    val webResource = resource()
+
+    val placeBetMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "30").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "12").
+      queryParam("placedDate", "40000").get(classOf[String])
+    assertEquals("OK", placeBetMsg)
+
+    val cancelBetsMsg = webResource.path("/cancelBets").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "BACK").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "12").get(classOf[String])
+    assertEquals("OK", cancelBetsMsg)
+
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"marketPrices":[{"runnerId":11},{"runnerId":12,"bestToLayPrice":2.2,"bestToLayTotal":20}]}""", bestPricesMsg)
+  }
+
+  @Test
+  def cancel_bets_lay_bet_is_cancelled_partially() {
+    createMarket(123)
+    val webResource = resource()
+
+    val placeBetMsg = webResource.path("/placeBet").
+      queryParam("betId", "100").
+      queryParam("userId", "1000").
+      queryParam("betSize", "30").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "LAY").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "12").
+      queryParam("placedDate", "40000").get(classOf[String])
+    assertEquals("OK", placeBetMsg)
+
+    val cancelBetsMsg = webResource.path("/cancelBets").
+      queryParam("userId", "1000").
+      queryParam("betSize", "10").
+      queryParam("betPrice", "2.2").
+      queryParam("betType", "LAY").
+      queryParam("marketId", "123").
+      queryParam("runnerId", "12").get(classOf[String])
+    assertEquals("OK", cancelBetsMsg)
+
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"marketPrices":[{"runnerId":11},{"runnerId":12,"bestToBackPrice":2.2,"bestToBackTotal":20}]}""", bestPricesMsg)
+  }
+
   private def createMarket(marketId: Long): String = {
     val webResource = resource()
     val responseMsg = webResource.path("/createMarket").

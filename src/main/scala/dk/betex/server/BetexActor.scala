@@ -37,6 +37,10 @@ case class BetexActor extends Actor {
         
         case e:GetBestPricesEvent => reply(betex.findMarket(e.marketId).getBestPrices())
         
+        case e:CancelBetsEvent => {
+          betex.findMarket(e.marketId).cancelBets(e.userId, e.betsSize, e.betPrice, e.betType, e.runnerId)
+          reply(RESPONSE_OK)
+        }
         case _ => throw new UnsupportedOperationException("Not supported.")
       }
     }
@@ -51,3 +55,4 @@ case class CreateMarketEvent(marketId: Long, marketName: String, eventName: Stri
 case object GetMarketsEvent
 case class PlaceBetEvent(betId: Long, userId: Long, betSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long, placedDate: Long)
 case class GetBestPricesEvent(marketId:Long)
+case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId:Long,runnerId: Long)
