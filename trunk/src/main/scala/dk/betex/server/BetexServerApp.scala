@@ -10,21 +10,19 @@ import com.sun.jersey.api.container.grizzly.GrizzlyWebContainerFactory
  */
 object BetexServerApp extends App {
   val port = if (args.isEmpty) 80 else args(0).toInt
-  
+
   val baseUri = "http://localhost:%s/".format(port);
-  val initParams = Map("com.sun.jersey.config.property.packages" -> "dk.betex.server")
 
   printHeader()
-  
+
   println("Starting Betex Server...");
-  val threadSelector =
-  GrizzlyWebContainerFactory.create(baseUri, initParams);
+  val betexServer = BetexServer(baseUri)
   println("Betex Server started with WADL available at %sapplication.wadl\nTry out %s\nHit enter to stop it...".format(baseUri, baseUri));
   System.in.read();
-  threadSelector.stopEndpoint();
+  betexServer.stop()
   System.exit(0);
-  
-   private def printHeader() {
+
+  private def printHeader() {
     println("")
     println("***********************************************************************************")
     println("*Betting Exchange Server Copyright 2011 Daniel Korzekwa(http://danmachine.com)    *")
@@ -32,5 +30,5 @@ object BetexServerApp extends App {
     println("*Licenced under Apache License 2.0(http://www.apache.org/licenses/LICENSE-2.0)    *")
     println("***********************************************************************************")
     println("")
-  } 
+  }
 }
