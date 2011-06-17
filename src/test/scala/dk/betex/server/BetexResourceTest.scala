@@ -5,6 +5,9 @@ import org.junit._
 import org.junit.Assert._
 import com.sun.jersey.api.client.WebResource
 
+/**http://10.2.4.191/createMarket?marketId=10&marketName=m1&eventName=e1&numOfWinners=1&marketTime=10&runners=11:r1,12:r2
+ * http://10.2.4.191/placeBet?betId=4&betSize=3&betPrice=2&betType=LAY&marketId=10&runnerId=11
+ */
 class BetexResourceTest extends JerseyTest("dk.betex.server") {
   @Test
   def help() {
