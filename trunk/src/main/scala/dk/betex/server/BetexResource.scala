@@ -74,10 +74,10 @@ class BetexResource {
   @GET
   @Path("/placeBet")
   @Produces(Array("text/plain"))
-  def placeBet(@QueryParam("betId") betId: Long, @QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
+  def placeBet( @QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
     @QueryParam("betType") betType: String, @QueryParam("marketId") marketId: Long, @QueryParam("runnerId") runnerId: Long, @QueryParam("placedDate") placedDate: Long): String = {
     try {
-      val resp = betexActor !? new PlaceBetEvent(betId, userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId, placedDate)
+      val resp = betexActor !? new PlaceBetEvent(userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId, placedDate)
       resp.toString
     } catch {
       case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
@@ -109,9 +109,22 @@ class BetexResource {
   @Produces(Array("text/plain"))
   def cancelBets(@QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
     @QueryParam("betType") betType: String, @QueryParam("marketId") marketId: Long, @QueryParam("runnerId") runnerId: Long): String = {
-    
-     try {
+
+    try {
       val resp = betexActor !? new CancelBetsEvent(userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId)
+      resp.toString
+    } catch {
+      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
+    }
+  }
+
+  @POST
+  @Path("/processBetexEvents")
+  @Consumes(Array("application/json"))
+  @Produces(Array("text/plain"))
+  def processBetexEvents(message: String): String = {
+    try {
+      val resp = betexActor !? new ProcessMarketEvents(message)
       resp.toString
     } catch {
       case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
