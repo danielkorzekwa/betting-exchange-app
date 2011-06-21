@@ -24,7 +24,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
   def create_market_succces() {
     val webResource = resource()
     val responseMsg = createMarket(123)
-    assertEquals("OK", responseMsg)
+    assertEquals("""{"status":"OK"}""", responseMsg)
 
     val markets = webResource.path("/getMarkets").get(classOf[String])
     assertEquals("""{"markets":[{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
@@ -34,10 +34,10 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
   def create_two_market2_succces() {
     val webResource = resource()
     val responseMsg1 = createMarket(123)
-    assertEquals("OK", responseMsg1)
+    assertEquals("""{"status":"OK"}""", responseMsg1)
 
     val responseMsg2 = createMarket(124)
-    assertEquals("OK", responseMsg2)
+    assertEquals("""{"status":"OK"}""", responseMsg2)
 
     val markets = webResource.path("/getMarkets").get(classOf[String])
     assertEquals("""{"markets":[{"marketId":124,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]},{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
@@ -64,6 +64,25 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"markets":[]}""", markets)
   }
 
+  /**Tests for getMarket.*/
+  @Test
+  def get_market() {
+    val responseMsg1 = createMarket(123)
+    assertEquals("""{"status":"OK"}""", responseMsg1)
+
+    val market = resource().path("/getMarket").
+      queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}""", market)
+  }
+
+  @Test
+  def get_market_doesnt_exist() {
+    val webResource = resource()
+    val market = webResource.path("/getMarket").
+      queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"status":"ERROR:key not found: 123"}""", market)
+  }
+
   /**Test scenarios for placeBet*/
   @Test
   def place_back_bet() {
@@ -79,7 +98,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketId", "1").
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
-    assertEquals("OK", responseMsg)
+    assertEquals("""{"status":"OK"}""", responseMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("""{"marketPrices":[{"runnerId":11,"bestToLayPrice":2.2,"bestToLayTotal":10},{"runnerId":12}]}""", bestPricesMsg)
@@ -99,7 +118,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketId", "1").
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
-    assertEquals("OK", responseMsg)
+    assertEquals("""{"status":"OK"}""", responseMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("""{"marketPrices":[{"runnerId":11,"bestToBackPrice":2.2,"bestToBackTotal":10},{"runnerId":12}]}""", bestPricesMsg)
@@ -134,7 +153,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
 
-    assertEquals("ERROR:key not found: 1", responseMsg)
+    assertEquals("""{"status":"ERROR:key not found: 1"}""", responseMsg)
   }
 
   /**Tests for getBestPrices.*/
@@ -142,7 +161,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
   def get_best_prices_market_doesnt_exists() {
     val webResource = resource()
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
-    assertEquals("ERROR:key not found: 1", bestPricesMsg)
+    assertEquals("""{"status":"ERROR:key not found: 1"}""", bestPricesMsg)
   }
 
   /**Tests for cancelBets*/
@@ -156,7 +175,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "BACK").
       queryParam("marketId", "1").
       queryParam("runnerId", "11").get(classOf[String])
-    assertEquals("ERROR:key not found: 1", cancelBetsMsg)
+    assertEquals("""{"status":"ERROR:key not found: 1"}""", cancelBetsMsg)
   }
 
   @Test
@@ -170,7 +189,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "BACK").
       queryParam("marketId", "123").
       queryParam("runnerId", "13").get(classOf[String])
-    assertEquals("OK", cancelBetsMsg)
+    assertEquals("""{"status":"OK"}""", cancelBetsMsg)
   }
 
   @Test
@@ -184,7 +203,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "BACK").
       queryParam("marketId", "123").
       queryParam("runnerId", "11").get(classOf[String])
-    assertEquals("OK", cancelBetsMsg)
+    assertEquals("""{"status":"OK"}""", cancelBetsMsg)
   }
 
   @Test
@@ -201,7 +220,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketId", "123").
       queryParam("runnerId", "12").
       queryParam("placedDate", "40000").get(classOf[String])
-    assertEquals("OK", placeBetMsg)
+    assertEquals("""{"status":"OK"}""", placeBetMsg)
 
     val cancelBetsMsg = webResource.path("/cancelBets").
       queryParam("userId", "1000").
@@ -210,7 +229,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "BACK").
       queryParam("marketId", "123").
       queryParam("runnerId", "12").get(classOf[String])
-    assertEquals("OK", cancelBetsMsg)
+    assertEquals("""{"status":"OK"}""", cancelBetsMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "123").get(classOf[String])
     assertEquals("""{"marketPrices":[{"runnerId":11},{"runnerId":12,"bestToLayPrice":2.2,"bestToLayTotal":20}]}""", bestPricesMsg)
@@ -230,7 +249,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketId", "123").
       queryParam("runnerId", "12").
       queryParam("placedDate", "40000").get(classOf[String])
-    assertEquals("OK", placeBetMsg)
+    assertEquals("""{"status":"OK"}""", placeBetMsg)
 
     val cancelBetsMsg = webResource.path("/cancelBets").
       queryParam("userId", "1000").
@@ -239,7 +258,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "LAY").
       queryParam("marketId", "123").
       queryParam("runnerId", "12").get(classOf[String])
-    assertEquals("OK", cancelBetsMsg)
+    assertEquals("""{"status":"OK"}""", cancelBetsMsg)
 
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "123").get(classOf[String])
     assertEquals("""{"marketPrices":[{"runnerId":11},{"runnerId":12,"bestToBackPrice":2.2,"bestToBackTotal":20}]}""", bestPricesMsg)
@@ -270,8 +289,8 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
 				"marketId":1,
 				"runnerId":11
 				} """))
-				
-				 marketEvents.put(new JSONObject("""{"time":1234568,"eventType":"PLACE_BET",	
+
+    marketEvents.put(new JSONObject("""{"time":1234568,"eventType":"PLACE_BET",	
 				"betSize":20,
 				"betPrice":3.1,
 				"betType":"BACK",
@@ -285,7 +304,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     marketEventsData.put("userId", 123)
     marketEventsData.put("marketEvents", marketEvents)
     val webResource = resource().path("/processBetexEvents").`type`("application/json").post(classOf[String], marketEventsData.toString)
-    assertEquals("OK", webResource)
+    assertEquals("""{"status":"OK"}""", webResource)
 
     val bestPricesMsg = resource().path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("""{"marketPrices":[{"runnerId":11,"bestToBackPrice":3,"bestToBackTotal":7,"bestToLayPrice":3.1,"bestToLayTotal":20},{"runnerId":12}]}""", bestPricesMsg)

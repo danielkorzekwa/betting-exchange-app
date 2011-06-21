@@ -39,6 +39,8 @@ case class BetexActor extends Actor {
 
         case GetMarketsEvent => reply(betex.getMarkets())
 
+        case e: GetMarketEvent => reply(betex.findMarket(e.marketId))
+
         case e: PlaceBetEvent => {
           betex.findMarket(e.marketId).placeBet(nextBetId(), e.userId, e.betSize, e.betPrice, e.betType, e.runnerId, e.placedDate)
           reply(RESPONSE_OK)
@@ -74,6 +76,7 @@ case class BetexActor extends Actor {
 
 case class CreateMarketEvent(marketId: Long, marketName: String, eventName: String, numOfWinners: Int, marketTime: Date, runners: List[IRunner])
 case object GetMarketsEvent
+case class GetMarketEvent(marketId: Long)
 case class PlaceBetEvent(userId: Long, betSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long, placedDate: Long)
 case class GetBestPricesEvent(marketId: Long)
 case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)

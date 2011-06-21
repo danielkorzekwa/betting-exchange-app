@@ -31,7 +31,7 @@ class BetexResource {
 
   @GET
   @Path("/createMarket")
-  @Produces(Array("text/plain"))
+  @Produces(Array("application/json"))
   def createMarket(@QueryParam("marketId") marketId: Long,
     @QueryParam("marketName") marketName: String,
     @QueryParam("eventName") eventName: String,
@@ -39,7 +39,7 @@ class BetexResource {
     @QueryParam("marketTime") marketTime: Long,
     @QueryParam("runners") runners: String): String = {
 
-    try {
+    process {
       require(marketId > 0 && numOfWinners > 0 && marketTime > 0)
       val marketRunners = for {
         runner <- runners.split(",")
@@ -47,9 +47,10 @@ class BetexResource {
       } yield Runner(runnerArray(0).toLong, runnerArray(1))
 
       val resp = betexActor !? CreateMarketEvent(marketId, marketName, eventName, numOfWinners, new Date(marketTime), marketRunners.toList)
-      resp.toString
-    } catch {
-      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+      }
+
     }
   }
 
@@ -57,30 +58,44 @@ class BetexResource {
   @Path("/getMarkets")
   @Produces(Array("application/json"))
   def getMarkets(): String = {
-    try {
+    process {
       val resp = betexActor !? GetMarketsEvent
       resp match {
         case resp: List[IMarket] => {
           val jsonObj = toJSON(resp)
-          jsonObj
+          jsonObj.toString()
         }
       }
 
-    } catch {
-      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
+    }
+  }
+
+  @GET
+  @Path("/getMarket")
+  @Produces(Array("application/json"))
+  def getMarket(@QueryParam("marketId") marketId: Long): String = {
+    process {
+      val resp = betexActor !? new GetMarketEvent(marketId)
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+        case resp: IMarket => {
+          val jsonObj = toJSON(resp)
+          jsonObj.toString()
+        }
+      }
     }
   }
 
   @GET
   @Path("/placeBet")
-  @Produces(Array("text/plain"))
-  def placeBet( @QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
+  @Produces(Array("application/json"))
+  def placeBet(@QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
     @QueryParam("betType") betType: String, @QueryParam("marketId") marketId: Long, @QueryParam("runnerId") runnerId: Long, @QueryParam("placedDate") placedDate: Long): String = {
-    try {
+    process {
       val resp = betexActor !? new PlaceBetEvent(userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId, placedDate)
-      resp.toString
-    } catch {
-      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+      }
     }
   }
 
@@ -88,51 +103,56 @@ class BetexResource {
   @Path("/getBestPrices")
   @Produces(Array("application/json"))
   def getBestPrices(@QueryParam("marketId") marketId: Long): String = {
-    try {
+    process {
       val resp = betexActor !? new GetBestPricesEvent(marketId)
 
       resp match {
-        case resp: String => resp
+        case resp: String => toJSONStatus(resp).toString()
         case resp: Map[Long, Tuple2[IRunnerPrice, IRunnerPrice]] => {
           val jsonObj = toJSON(resp)
           jsonObj.toString
         }
       }
-
-    } catch {
-      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
     }
   }
 
   @GET
   @Path("/cancelBets")
-  @Produces(Array("text/plain"))
+  @Produces(Array("application/json"))
   def cancelBets(@QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
     @QueryParam("betType") betType: String, @QueryParam("marketId") marketId: Long, @QueryParam("runnerId") runnerId: Long): String = {
 
-    try {
+    process {
       val resp = betexActor !? new CancelBetsEvent(userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId)
-      resp.toString
-    } catch {
-      case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+      }
     }
   }
 
   @POST
   @Path("/processBetexEvents")
   @Consumes(Array("application/json"))
-  @Produces(Array("text/plain"))
+  @Produces(Array("application/json"))
   def processBetexEvents(message: String): String = {
-    try {
+    process {
       val resp = betexActor !? new ProcessMarketEvents(message)
-      resp.toString
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+      }
+    }
+  }
+
+  private def process(f: => String): String = {
+    try {
+      f
     } catch {
       case e: Exception => RESPONSE_INPUT_VALIDATION_ERROR + ":" + e.getLocalizedMessage
     }
   }
 
   /**Key - runnerId, Value - market prices (element 1 - priceToBack, element 2 - priceToLay)*/
-  private def toJSON(marketPrices: Map[Long, Tuple2[IRunnerPrice, IRunnerPrice]]): String = {
+  private def toJSON(marketPrices: Map[Long, Tuple2[IRunnerPrice, IRunnerPrice]]): JSONObject = {
 
     val marketPricesObj = new JSONArray()
 
@@ -152,33 +172,45 @@ class BetexResource {
 
     val jsonObj = new JSONObject()
     jsonObj.put("marketPrices", marketPricesObj)
-    jsonObj.toString()
+    jsonObj
   }
 
-  private def toJSON(markets: List[IMarket]): String = {
+  private def toJSON(markets: List[IMarket]): JSONObject = {
     val marketsObj = new JSONArray()
     for (market <- markets) {
-      val runnersObj = new JSONArray()
-      for (runner <- market.runners) {
-        val runnerObj = new JSONObject()
-        runnerObj.put("runnerId", runner.runnerId)
-        runnerObj.put("runnerName", runner.runnerName)
-        runnersObj.put(runnerObj)
-      }
-      val marketObj = new JSONObject()
-      marketObj.put("marketId", market.marketId)
-      marketObj.put("marketName", market.marketName)
-      marketObj.put("eventName", market.eventName)
-      marketObj.put("numOfWinners", market.numOfWinners)
-      marketObj.put("marketTime", market.marketTime.getTime())
-      marketObj.put("runners", runnersObj)
-
+      val marketObj = toJSON(market)
       marketsObj.put(marketObj)
     }
 
     val jsonObj = new JSONObject()
     jsonObj.put("markets", marketsObj)
-    jsonObj.toString()
+    jsonObj
 
   }
+
+  private def toJSON(market: IMarket): JSONObject = {
+    val runnersObj = new JSONArray()
+    for (runner <- market.runners) {
+      val runnerObj = new JSONObject()
+      runnerObj.put("runnerId", runner.runnerId)
+      runnerObj.put("runnerName", runner.runnerName)
+      runnersObj.put(runnerObj)
+    }
+    val marketObj = new JSONObject()
+    marketObj.put("marketId", market.marketId)
+    marketObj.put("marketName", market.marketName)
+    marketObj.put("eventName", market.eventName)
+    marketObj.put("numOfWinners", market.numOfWinners)
+    marketObj.put("marketTime", market.marketTime.getTime())
+    marketObj.put("runners", runnersObj)
+
+    marketObj
+  }
+
+  private def toJSONStatus(status: String): JSONObject = {
+    val obj = new JSONObject()
+    obj.put("status", status)
+    obj
+  }
+
 }
