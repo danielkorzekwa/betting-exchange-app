@@ -194,9 +194,9 @@
 			</dependency>
 			
 			<dependency>
-				<groupId>dk.bettingai</groupId>
-				<artifactId>market-data-collector</artifactId>
-				<version>1.4-SNAPSHOT</version>
+   				<groupId>dk.betex</groupId>
+   				<artifactId>betex-event-collector</artifactId>
+   				<version>0.1-SNAPSHOT</version>
 			</dependency>
 			
 			<dependency>

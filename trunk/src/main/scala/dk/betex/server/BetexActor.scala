@@ -7,7 +7,7 @@ import java.util.Date
 import dk.betex._
 import api.IBet.BetTypeEnum._
 import org.codehaus.jettison.json._
-import dk.bettingai.marketsimulator.marketevent._
+import dk.betex.eventcollector.eventprocessor._
 
 /**
  * This actor processes all betex requests in a sequence.
