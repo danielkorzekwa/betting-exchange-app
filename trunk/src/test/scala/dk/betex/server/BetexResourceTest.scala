@@ -83,6 +83,29 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"status":"ERROR:key not found: 123"}""", market)
   }
 
+  /**Tests for removeMarkets*/
+  @Test
+  def remove_market_doesnt_exist {
+    val removeMarketStatus = resource().path("/removeMarket").
+      queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"status":"OK"}""", removeMarketStatus)
+  }
+
+  @Test
+  def remove_market {
+    val responseMsg1 = createMarket(123)
+    assertEquals("""{"status":"OK"}""", responseMsg1)
+
+    val removeMarketStatus = resource().path("/removeMarket").
+      queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"status":"OK"}""", removeMarketStatus)
+
+    val market = resource().path("/getMarket").
+      queryParam("marketId", "123").get(classOf[String])
+    assertEquals("""{"status":"ERROR:key not found: 123"}""", market)
+
+  }
+
   /**Test scenarios for placeBet*/
   @Test
   def place_back_bet() {
