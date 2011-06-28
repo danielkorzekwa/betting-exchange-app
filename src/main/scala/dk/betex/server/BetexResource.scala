@@ -87,6 +87,18 @@ class BetexResource {
   }
 
   @GET
+  @Path("/removeMarket")
+  @Produces(Array("application/json"))
+  def placeBet(@QueryParam("marketId") marketId: Long): String = {
+    process {
+      val resp = betexActor !? new RemoveMarketEvent(marketId)
+      resp match {
+        case resp: String => toJSONStatus(resp).toString()
+      }
+    }
+  }
+
+  @GET
   @Path("/placeBet")
   @Produces(Array("application/json"))
   def placeBet(@QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
