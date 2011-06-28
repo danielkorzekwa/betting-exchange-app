@@ -8,6 +8,8 @@ import dk.betex._
 import api.IBet.BetTypeEnum._
 import org.codehaus.jettison.json._
 import dk.betex.eventcollector.eventprocessor._
+import scala.collection.immutable.ListMap
+import dk.betex.api.IMarket._
 
 /**
  * This actor processes all betex requests in a sequence.
@@ -51,7 +53,14 @@ case class BetexActor extends Actor {
           reply(RESPONSE_OK)
         }
 
-        case e: GetBestPricesEvent => reply(betex.findMarket(e.marketId).getBestPrices())
+        case e: GetBestPricesEvent => {
+          val market = betex.findMarket(e.marketId)
+          val bestPrices = market.getBestPrices()
+          /**return runner prices in the same order as market runners.*/
+          val orderedPrices = for (runner <- market.runners) yield (runner.runnerId, bestPrices(runner.runnerId))
+          val orderedPricesMap = ListMap(orderedPrices: _*)
+          reply(orderedPricesMap)
+        }
 
         case e: CancelBetsEvent => {
           betex.findMarket(e.marketId).cancelBets(e.userId, e.betsSize, e.betPrice, e.betType, e.runnerId)

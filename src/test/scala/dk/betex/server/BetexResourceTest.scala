@@ -186,6 +186,14 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("""{"status":"ERROR:key not found: 1"}""", bestPricesMsg)
   }
+  
+  @Test
+  def get_best_prices_check_order() {
+    createMarketRandomOrderOfRunners(1)
+    val webResource = resource()
+    val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("""{"marketPrices":[{"runnerId":4},{"runnerId":1},{"runnerId":2},{"runnerId":7},{"runnerId":3},{"runnerId":5},{"runnerId":6}]}""", bestPricesMsg)
+  }
 
   /**Tests for cancelBets*/
   @Test
@@ -342,6 +350,20 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("numOfWinners", "1").
       queryParam("marketTime", "1000").
       queryParam("runners", "11:Man Utd,12:Arsenal").
+      get(classOf[String])
+
+    responseMsg
+  }
+  
+  private def createMarketRandomOrderOfRunners(marketId: Long): String = {
+    val webResource = resource()
+    val responseMsg = webResource.path("/createMarket").
+      queryParam("marketId", marketId.toString).
+      queryParam("marketName", "Man Utd - Arsenal").
+      queryParam("eventName", "English Soccer").
+      queryParam("numOfWinners", "1").
+      queryParam("marketTime", "1000").
+      queryParam("runners", "4:r4,1:r1,2:r2,7:r7,3:r3,5:r6,6:r6").
       get(classOf[String])
 
     responseMsg
