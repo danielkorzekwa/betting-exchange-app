@@ -10,6 +10,7 @@ import org.codehaus.jettison.json._
 import dk.betex.eventcollector.eventprocessor._
 import scala.collection.immutable.ListMap
 import dk.betex.api.IMarket._
+import BetexActor.MarketProbTypeEnum.MarketProbTypeEnum
 
 /**
  * This actor processes all betex requests in a sequence.
@@ -17,10 +18,37 @@ import dk.betex.api.IMarket._
  * @author korzekwad
  *
  */
-case class BetexActor extends Actor {
+
+object BetexActor {
 
   val RESPONSE_OK = "OK"
   val RESPONSE_ERROR = "ERROR"
+
+  case class CreateMarketEvent(marketId: Long, marketName: String, eventName: String, numOfWinners: Int, marketTime: Date, runners: List[IRunner])
+  case object GetMarketsEvent
+  case class GetMarketEvent(marketId: Long)
+  case class RemoveMarketEvent(marketId: Long)
+  case class PlaceBetEvent(userId: Long, betSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long, placedDate: Long)
+  case class GetBestPricesEvent(marketId: Long)
+  case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)
+  case class ProcessMarketEvents(marketEventsJSON: String)
+  case class GetMarketProbEvent(marketId: Long, marketProbType: MarketProbTypeEnum)
+
+  case class BetexResponseEvent(status: String, data: Option[Any] = None)
+
+  object MarketProbTypeEnum extends Enumeration {
+    type MarketProbTypeEnum = Value
+    val WIN = Value("WIN") // winner market
+    val PLACE = Value("PLACE") //two winner market
+    val SHOW = Value("SHOW") //three winner market
+
+  }
+
+}
+
+case class BetexActor extends Actor {
+
+  import BetexActor._
 
   private val betex = new Betex()
   private var lastBetId: Long = 1
@@ -35,22 +63,23 @@ case class BetexActor extends Actor {
     loop {
       react {
         case e: CreateMarketEvent => {
+
           betex.createMarket(e.marketId, e.marketName, e.eventName, e.numOfWinners, e.marketTime, e.runners)
-          reply(RESPONSE_OK)
+          reply(BetexResponseEvent(RESPONSE_OK))
         }
 
-        case GetMarketsEvent => reply(betex.getMarkets())
+        case GetMarketsEvent => reply(BetexResponseEvent(RESPONSE_OK, Option(betex.getMarkets())))
 
-        case e: GetMarketEvent => reply(betex.findMarket(e.marketId))
+        case e: GetMarketEvent => reply(BetexResponseEvent(RESPONSE_OK, Option(betex.findMarket(e.marketId))))
 
         case e: RemoveMarketEvent => {
           betex.removeMarket(e.marketId)
-          reply(RESPONSE_OK)
+          reply(BetexResponseEvent(RESPONSE_OK))
         }
 
         case e: PlaceBetEvent => {
           betex.findMarket(e.marketId).placeBet(nextBetId(), e.userId, e.betSize, e.betPrice, e.betType, e.runnerId, e.placedDate)
-          reply(RESPONSE_OK)
+          reply(BetexResponseEvent(RESPONSE_OK))
         }
 
         case e: GetBestPricesEvent => {
@@ -59,12 +88,16 @@ case class BetexActor extends Actor {
           /**return runner prices in the same order as market runners.*/
           val orderedPrices = for (runner <- market.runners) yield (runner.runnerId, bestPrices(runner.runnerId))
           val orderedPricesMap = ListMap(orderedPrices: _*)
-          reply(orderedPricesMap)
+          reply(BetexResponseEvent(RESPONSE_OK, Option(orderedPricesMap)))
         }
 
         case e: CancelBetsEvent => {
           betex.findMarket(e.marketId).cancelBets(e.userId, e.betsSize, e.betPrice, e.betType, e.runnerId)
-          reply(RESPONSE_OK)
+          reply(BetexResponseEvent(RESPONSE_OK))
+        }
+
+        case e: GetMarketProbEvent => {
+          reply(BetexResponseEvent(RESPONSE_OK, Option(Map[Long, Double]())))
         }
 
         case e: ProcessMarketEvents => {
@@ -75,7 +108,7 @@ case class BetexActor extends Actor {
             val marketEvent = marketEvents.get(i).toString()
             marketEventProcessor.process(marketEvent, nextBetId(), userId)
           }
-          reply(RESPONSE_OK)
+          reply(BetexResponseEvent(RESPONSE_OK))
         }
         case _ => throw new UnsupportedOperationException("Not supported.")
       }
@@ -83,16 +116,10 @@ case class BetexActor extends Actor {
   }
 
   override def exceptionHandler = {
-    case e: Exception => reply(RESPONSE_ERROR + ":" + e.getLocalizedMessage())
+    case e: Exception => {
+      val errorResponse = BetexResponseEvent(RESPONSE_ERROR + ":" + e.getLocalizedMessage())
+      reply(errorResponse)
+    }
   }
 
 }
-
-case class CreateMarketEvent(marketId: Long, marketName: String, eventName: String, numOfWinners: Int, marketTime: Date, runners: List[IRunner])
-case object GetMarketsEvent
-case class GetMarketEvent(marketId: Long)
-case class RemoveMarketEvent(marketId: Long)
-case class PlaceBetEvent(userId: Long, betSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long, placedDate: Long)
-case class GetBestPricesEvent(marketId: Long)
-case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)
-case class ProcessMarketEvents(marketEventsJSON: String)

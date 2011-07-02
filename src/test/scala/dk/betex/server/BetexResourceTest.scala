@@ -53,7 +53,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketTime", "2000").
       queryParam("runners", "1:Barcelona,2:Real Madryt").
       get(classOf[String])
-    assertEquals("INPUT_VALIDATION_ERROR:requirement failed", responseMsg);
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed"}""", responseMsg);
   }
 
   /**Tests for getMarkets.*/
@@ -160,7 +160,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
 
-    assertEquals("INPUT_VALIDATION_ERROR:None.get", responseMsg)
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:None.get"}""", responseMsg)
   }
 
   @Test
@@ -186,7 +186,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
     assertEquals("""{"status":"ERROR:key not found: 1"}""", bestPricesMsg)
   }
-  
+
   @Test
   def get_best_prices_check_order() {
     createMarketRandomOrderOfRunners(1)
@@ -295,6 +295,53 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"marketPrices":[{"runnerId":11},{"runnerId":12,"bestToBackPrice":2.2,"bestToBackTotal":20}]}""", bestPricesMsg)
   }
 
+  /**Tests for getMarketStat*/
+  @Test
+  def get_market_prob_market_not_found {
+
+    val market = resource().path("/getMarketProbability").
+      queryParam("marketId", "123").
+      queryParam("probType", "WIN").
+      get(classOf[String])
+    assertEquals("""{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}""", market)
+
+  }
+
+  @Test
+  def get_market_prob_missing_prob_type {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_wrong_prob_type {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_win {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_place {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_place_for_non_win_market {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_show {
+    fail("")
+  }
+
+  @Test
+  def get_market_prob_show_for_non_win_market {
+    fail("")
+  }
+
   /**Test scenarios for process Betex events*/
   @Test
   def process_betex_events {
@@ -354,7 +401,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
 
     responseMsg
   }
-  
+
   private def createMarketRandomOrderOfRunners(marketId: Long): String = {
     val webResource = resource()
     val responseMsg = webResource.path("/createMarket").
