@@ -80,7 +80,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val webResource = resource()
     val market = webResource.path("/getMarket").
       queryParam("marketId", "123").get(classOf[String])
-    assertEquals("""{"status":"ERROR:key not found: 123"}""", market)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=123"}""", market)
   }
 
   /**Tests for removeMarkets*/
@@ -102,7 +102,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
 
     val market = resource().path("/getMarket").
       queryParam("marketId", "123").get(classOf[String])
-    assertEquals("""{"status":"ERROR:key not found: 123"}""", market)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=123"}""", market)
 
   }
 
@@ -176,7 +176,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("runnerId", "11").
       queryParam("placedDate", "40000").get(classOf[String])
 
-    assertEquals("""{"status":"ERROR:key not found: 1"}""", responseMsg)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=1"}""", responseMsg)
   }
 
   /**Tests for getBestPrices.*/
@@ -184,7 +184,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
   def get_best_prices_market_doesnt_exists() {
     val webResource = resource()
     val bestPricesMsg = webResource.path("/getBestPrices").queryParam("marketId", "1").get(classOf[String])
-    assertEquals("""{"status":"ERROR:key not found: 1"}""", bestPricesMsg)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=1"}""", bestPricesMsg)
   }
 
   @Test
@@ -206,7 +206,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("betType", "BACK").
       queryParam("marketId", "1").
       queryParam("runnerId", "11").get(classOf[String])
-    assertEquals("""{"status":"ERROR:key not found: 1"}""", cancelBetsMsg)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=1"}""", cancelBetsMsg)
   }
 
   @Test
@@ -303,13 +303,16 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       queryParam("marketId", "123").
       queryParam("probType", "WIN").
       get(classOf[String])
-    assertEquals("""{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}""", market)
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=123"}""", market)
 
   }
 
   @Test
   def get_market_prob_missing_prob_type {
-    fail("")
+    val market = resource().path("/getMarketProbability").
+      queryParam("marketId", "123").
+      get(classOf[String])
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:Incorrect probType = null. Supported values = MarketProbTypeEnum [WIN, PLACE, SHOW]"}""", market)
   }
 
   @Test

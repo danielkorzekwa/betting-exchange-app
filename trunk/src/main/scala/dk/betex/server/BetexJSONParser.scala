@@ -3,6 +3,7 @@ package dk.betex.server
 import dk.betex.api._
 import dk.betex.api.IMarket._
 import org.codehaus.jettison.json._
+import BetexActor._
 
 /**
  * Converts betex data to json object.
@@ -16,6 +17,7 @@ object BetexJSONParser {
       case d: Map[Long, Tuple2[IRunnerPrice, IRunnerPrice]] => toJSON(d)
       case d: List[IMarket] => toJSON(d)
       case d: IMarket => toJSON(d)
+      case d: MarketProb => toJSON(d)
     }
   }
 
@@ -73,6 +75,10 @@ object BetexJSONParser {
     marketObj.put("runners", runnersObj)
 
     marketObj
+  }
+  
+  private def toJSON(marketProb:MarketProb):JSONObject = {
+    new JSONObject()
   }
 
 }
