@@ -32,8 +32,9 @@ object BetexActor {
   case class GetBestPricesEvent(marketId: Long)
   case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)
   case class ProcessMarketEvents(marketEventsJSON: String)
+  
   case class GetMarketProbEvent(marketId: Long, marketProbType: MarketProbTypeEnum)
-
+    
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
   object MarketProbTypeEnum extends Enumeration {
@@ -41,8 +42,11 @@ object BetexActor {
     val WIN = Value("WIN") // winner market
     val PLACE = Value("PLACE") //two winner market
     val SHOW = Value("SHOW") //three winner market
-
+    
+    override def toString() = MarketProbTypeEnum.values.mkString("MarketProbTypeEnum [",", ","]")
   }
+  
+  case class MarketProb(marketId:Long, probType: MarketProbTypeEnum, probs: Map[Long,Double])
 
 }
 
@@ -97,7 +101,9 @@ case class BetexActor extends Actor {
         }
 
         case e: GetMarketProbEvent => {
-          reply(BetexResponseEvent(RESPONSE_OK, Option(Map[Long, Double]())))
+          val market = betex.findMarket(e.marketId)
+          val marketProb = MarketProb(e.marketId,e.marketProbType, Map())
+          reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb)))
         }
 
         case e: ProcessMarketEvents => {

@@ -101,7 +101,16 @@ class BetexResource {
   @Path("/getMarketProbability")
   @Produces(Array("application/json"))
   def getMarketProbabiloty(@QueryParam("marketId") marketId: Long, @QueryParam("probType") probType: String) = {
-      process {GetMarketProbEvent(marketId,MarketProbTypeEnum.withName(probType))}
+
+    process {
+      val probTypeValue = try {
+        MarketProbTypeEnum.withName(probType)
+      } catch {
+        case e: Exception => throw new RuntimeException("Incorrect probType = %s. Supported values = %s".format(probType, MarketProbTypeEnum.toString()))
+      }
+
+      GetMarketProbEvent(marketId, probTypeValue)
+    }
   }
 
   @POST
