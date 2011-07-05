@@ -36,7 +36,7 @@ object BetexActor {
   case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)
   case class ProcessMarketEvents(marketEventsJSON: String)
 
-  case class GetMarketProbEvent(marketId: Long, marketProbType: MarketProbTypeEnum)
+  case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
@@ -109,29 +109,42 @@ case class BetexActor extends Actor {
           val bestPrices = market.getBestPrices.mapValues(prices => prices._1.price -> prices._2.price)
           val marketProbValue = ProbabilityCalculator.calculate(bestPrices, market.numOfWinners)
 
-          val marketProb = market.numOfWinners match {
-            case 1 if e.marketProbType == WIN => MarketProb(e.marketId, e.marketProbType, marketProbValue)
-
-            case 1 if e.marketProbType == PLACE => {
-              /**Map win probabilities to place probabilities.*/
-              val placeMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcPlaceProb(runnerId, marketProbValue) }
-              MarketProb(e.marketId, e.marketProbType, placeMarketProb)
+          val marketProbType = e.marketProbType match {
+            case None => market.numOfWinners match {
+              case 1 => WIN
+              case 2 => PLACE
+              case x: Int if x >= 3 => SHOW
             }
+            case Some(e) => e
 
-            case 1 if e.marketProbType == SHOW => {
-              /**Map win probabilities to place probabilities.*/
-              val showMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcShowProb(runnerId, marketProbValue) }
-              MarketProb(e.marketId, e.marketProbType, showMarketProb)
-            }
-
-            case 2 if e.marketProbType == PLACE => MarketProb(e.marketId, e.marketProbType, marketProbValue)
-
-            case x: Int if x >= 3 && e.marketProbType == SHOW => MarketProb(e.marketId, e.marketProbType, marketProbValue)
-
-            case _ => throw new UnsupportedOperationException("Can't calculate probability for numOfWinners=%s and probType=%s.".format(market.numOfWinners, e.marketProbType))
           }
 
-          reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb)))
+          val marketProb = market.numOfWinners match {
+            case 1 if marketProbType == WIN => MarketProb(e.marketId, marketProbType, marketProbValue)
+
+            case 1 if marketProbType == PLACE => {
+              /**Map win probabilities to place probabilities.*/
+              val placeMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcPlaceProb(runnerId, marketProbValue) }
+              MarketProb(e.marketId, marketProbType, placeMarketProb)
+            }
+
+            case 1 if marketProbType == SHOW => {
+              /**Map win probabilities to place probabilities.*/
+              val showMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcShowProb(runnerId, marketProbValue) }
+              MarketProb(e.marketId, marketProbType, showMarketProb)
+            }
+
+            case 2 if marketProbType == PLACE => MarketProb(e.marketId, marketProbType, marketProbValue)
+
+            case x: Int if x >= 3 && marketProbType == SHOW => MarketProb(e.marketId, marketProbType, marketProbValue)
+
+            case _ => throw new UnsupportedOperationException("Can't calculate probability for numOfWinners=%s and probType=%s.".format(market.numOfWinners, marketProbType))
+          }
+
+          /**return runner prices in the same order as market runners.*/
+          val orderedProb = for (runner <- market.runners) yield (runner.runnerId, marketProb.probs(runner.runnerId))
+          val orderedProbMap = ListMap(orderedProb: _*)
+          reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb.copy(probs = orderedProbMap))))
         }
 
         case e: ProcessMarketEvents => {

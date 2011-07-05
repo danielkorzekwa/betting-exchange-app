@@ -308,14 +308,6 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
   }
 
   @Test
-  def get_market_prob_missing_prob_type {
-    val market = resource().path("/getMarketProbability").
-      queryParam("marketId", "123").
-      get(classOf[String])
-    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:Incorrect probType = null. Supported values = MarketProbTypeEnum [WIN, PLACE, SHOW]"}""", market)
-  }
-
-  @Test
   def get_market_prob_wrong_prob_type {
     val marketProb = resource().path("/getMarketProbability").
       queryParam("marketId", "123").
@@ -336,6 +328,21 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val marketProb = resource().path("/getMarketProbability").
       queryParam("marketId", "1").
       queryParam("probType", "WIN").
+      get(classOf[String])
+    assertEquals("""{"marketId":1,"probType":"WIN","probabilities":[{"runnerId":11,"probability":10},{"runnerId":12,"probability":30},{"runnerId":13,"probability":30},{"runnerId":14,"probability":30}]}""", marketProb)
+  }
+  
+   @Test
+  def get_market_prob_win_market_default_prob_type {
+
+    /**Data setup*/
+    val createMarketResp = createMarketWithRunnersAndBets(1)
+    assertEquals("""{"status":"OK"}""", createMarketResp)
+
+    /**Check market probability.*/
+
+    val marketProb = resource().path("/getMarketProbability").
+      queryParam("marketId", "1").
       get(classOf[String])
     assertEquals("""{"marketId":1,"probType":"WIN","probabilities":[{"runnerId":11,"probability":10},{"runnerId":12,"probability":30},{"runnerId":13,"probability":30},{"runnerId":14,"probability":30}]}""", marketProb)
   }
@@ -387,6 +394,21 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"marketId":1,"probType":"PLACE","probabilities":[{"runnerId":11,"probability":20},{"runnerId":12,"probability":60},{"runnerId":13,"probability":60},{"runnerId":14,"probability":60}]}""", marketProb)
 
   }
+  
+  @Test
+  def get_market_prob_place_market_default_prob {
+    /**Data setup*/
+    val createMarketResp = createMarketWithRunnersAndBets(2)
+    assertEquals("""{"status":"OK"}""", createMarketResp)
+
+    /**Check market probability.*/
+
+    val marketProb = resource().path("/getMarketProbability").
+      queryParam("marketId", "1").
+      get(classOf[String])
+    assertEquals("""{"marketId":1,"probType":"PLACE","probabilities":[{"runnerId":11,"probability":20},{"runnerId":12,"probability":60},{"runnerId":13,"probability":60},{"runnerId":14,"probability":60}]}""", marketProb)
+
+  }
 
   @Test
   def get_market_prob_place_market_show_prob {
@@ -431,6 +453,21 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     val marketProb = resource().path("/getMarketProbability").
       queryParam("marketId", "1").
       queryParam("probType", "SHOW").
+      get(classOf[String])
+    assertEquals("""{"marketId":1,"probType":"SHOW","probabilities":[{"runnerId":11,"probability":30},{"runnerId":12,"probability":90},{"runnerId":13,"probability":90},{"runnerId":14,"probability":90}]}""", marketProb)
+
+  }
+  
+   @Test
+  def get_market_prob_show_market_default_prob {
+    /**Data setup*/
+    val createMarketResp = createMarketWithRunnersAndBets(3)
+    assertEquals("""{"status":"OK"}""", createMarketResp)
+
+    /**Check market probability.*/
+
+    val marketProb = resource().path("/getMarketProbability").
+      queryParam("marketId", "1").
       get(classOf[String])
     assertEquals("""{"marketId":1,"probType":"SHOW","probabilities":[{"runnerId":11,"probability":30},{"runnerId":12,"probability":90},{"runnerId":13,"probability":90},{"runnerId":14,"probability":90}]}""", marketProb)
 
