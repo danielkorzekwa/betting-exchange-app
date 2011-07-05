@@ -4,6 +4,7 @@ import dk.betex.api._
 import dk.betex.api.IMarket._
 import org.codehaus.jettison.json._
 import BetexActor._
+import org.apache.commons.math.util._
 
 /**
  * Converts betex data to json object.
@@ -76,9 +77,22 @@ object BetexJSONParser {
 
     marketObj
   }
-  
-  private def toJSON(marketProb:MarketProb):JSONObject = {
-    new JSONObject()
+
+  private def toJSON(marketProb: MarketProb): JSONObject = {
+    val marketProbsArray = new JSONArray()
+
+    for ((runnerId, runnerProb) <- marketProb.probs) {
+      val runnerProbObj = new JSONObject()
+      runnerProbObj.put("runnerId", runnerId)
+      runnerProbObj.put("probability", MathUtils.round(runnerProb*100,2))
+      marketProbsArray.put(runnerProbObj)
+    }
+
+    val marketProbsObj = new JSONObject()
+    marketProbsObj.put("marketId", marketProb.marketId)
+    marketProbsObj.put("probType", marketProb.probType.toString)
+    marketProbsObj.put("probabilities", marketProbsArray)
+    marketProbsObj
   }
 
 }

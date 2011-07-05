@@ -78,7 +78,16 @@ class BetexResource {
   @Produces(Array("application/json"))
   def placeBet(@QueryParam("userId") userId: Int, @QueryParam("betSize") betSize: Double, @QueryParam("betPrice") betPrice: Double,
     @QueryParam("betType") betType: String, @QueryParam("marketId") marketId: Long, @QueryParam("runnerId") runnerId: Long, @QueryParam("placedDate") placedDate: Long): String = {
-    process { PlaceBetEvent(userId, betSize, betPrice, IBet.BetTypeEnum.withName(betType), marketId, runnerId, placedDate) }
+    process {
+
+      val betTypeValue = try {
+        IBet.BetTypeEnum.withName(betType)
+      } catch {
+        case e: Exception => throw new RuntimeException("Incorrect betType = %s. Supported values = %s".format(betType, IBet.BetTypeEnum.toString()))
+      }
+
+      PlaceBetEvent(userId, betSize, betPrice, betTypeValue, marketId, runnerId, placedDate)
+    }
   }
 
   @GET
