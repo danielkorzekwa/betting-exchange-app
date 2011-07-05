@@ -11,6 +11,9 @@ import dk.betex.eventcollector.eventprocessor._
 import scala.collection.immutable.ListMap
 import dk.betex.api.IMarket._
 import BetexActor.MarketProbTypeEnum.MarketProbTypeEnum
+import dk.bettingai.marketsimulator.risk._
+import scala.collection._
+import dk.bettingai.risk.prob._
 
 /**
  * This actor processes all betex requests in a sequence.
@@ -32,9 +35,9 @@ object BetexActor {
   case class GetBestPricesEvent(marketId: Long)
   case class CancelBetsEvent(userId: Long, betsSize: Double, betPrice: Double, betType: BetTypeEnum, marketId: Long, runnerId: Long)
   case class ProcessMarketEvents(marketEventsJSON: String)
-  
+
   case class GetMarketProbEvent(marketId: Long, marketProbType: MarketProbTypeEnum)
-    
+
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
   object MarketProbTypeEnum extends Enumeration {
@@ -42,17 +45,18 @@ object BetexActor {
     val WIN = Value("WIN") // winner market
     val PLACE = Value("PLACE") //two winner market
     val SHOW = Value("SHOW") //three winner market
-    
-    override def toString() = MarketProbTypeEnum.values.mkString("MarketProbTypeEnum [",", ","]")
+
+    override def toString() = MarketProbTypeEnum.values.mkString("MarketProbTypeEnum [", ", ", "]")
   }
-  
-  case class MarketProb(marketId:Long, probType: MarketProbTypeEnum, probs: Map[Long,Double])
+
+  case class MarketProb(marketId: Long, probType: MarketProbTypeEnum, probs: Map[Long, Double])
 
 }
 
 case class BetexActor extends Actor {
 
   import BetexActor._
+  import MarketProbTypeEnum._
 
   private val betex = new Betex()
   private var lastBetId: Long = 1
@@ -102,7 +106,31 @@ case class BetexActor extends Actor {
 
         case e: GetMarketProbEvent => {
           val market = betex.findMarket(e.marketId)
-          val marketProb = MarketProb(e.marketId,e.marketProbType, Map())
+          val bestPrices = market.getBestPrices.mapValues(prices => prices._1.price -> prices._2.price)
+          val marketProbValue = ProbabilityCalculator.calculate(bestPrices, market.numOfWinners)
+
+          val marketProb = market.numOfWinners match {
+            case 1 if e.marketProbType == WIN => MarketProb(e.marketId, e.marketProbType, marketProbValue)
+
+            case 1 if e.marketProbType == PLACE => {
+              /**Map win probabilities to place probabilities.*/
+              val placeMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcPlaceProb(runnerId, marketProbValue) }
+              MarketProb(e.marketId, e.marketProbType, placeMarketProb)
+            }
+
+            case 1 if e.marketProbType == SHOW => {
+              /**Map win probabilities to place probabilities.*/
+              val showMarketProb = marketProbValue.map { case (runnerId, prob) => runnerId -> OrderingProb.calcShowProb(runnerId, marketProbValue) }
+              MarketProb(e.marketId, e.marketProbType, showMarketProb)
+            }
+
+            case 2 if e.marketProbType == PLACE => MarketProb(e.marketId, e.marketProbType, marketProbValue)
+
+            case x: Int if x >= 3 && e.marketProbType == SHOW => MarketProb(e.marketId, e.marketProbType, marketProbValue)
+
+            case _ => throw new UnsupportedOperationException("Can't calculate probability for numOfWinners=%s and probType=%s.".format(market.numOfWinners, e.marketProbType))
+          }
+
           reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb)))
         }
 
