@@ -109,7 +109,7 @@ class BetexResource {
   @GET
   @Path("/getMarketProbability")
   @Produces(Array("application/json"))
-  def getMarketProbabiloty(@QueryParam("marketId") marketId: Long, @QueryParam("probType") probType: String) = {
+  def getMarketProbability(@QueryParam("marketId") marketId: Long, @QueryParam("probType") probType: String) = {
 
     process {
       val probTypeValue =
