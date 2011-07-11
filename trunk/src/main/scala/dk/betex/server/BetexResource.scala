@@ -109,7 +109,7 @@ class BetexResource {
   @GET
   @Path("/getMarketProbability")
   @Produces(Array("application/json"))
-  def getMarketProbability(@QueryParam("marketId") marketId: Long, @QueryParam("probType") probType: String) = {
+  def getMarketProbability(@QueryParam("marketId") marketId: Long, @QueryParam("probType") probType: String): String = {
 
     process {
       val probTypeValue =
@@ -122,6 +122,17 @@ class BetexResource {
 
       GetMarketProbEvent(marketId, probTypeValue)
     }
+  }
+
+  @GET
+  @Path("/getRisk")
+  @Produces(Array("application/json"))
+  def getRisk(@QueryParam("userId") userId: Int,@QueryParam("marketId") marketId: Long): String = {
+    process {
+      require(userId>0,"User id parameter not found.")
+      require(marketId>0,"Market id parameter not found.")
+      new GetRiskEvent(userId,marketId) 
+      }
   }
 
   @POST

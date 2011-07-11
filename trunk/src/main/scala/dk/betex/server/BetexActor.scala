@@ -37,6 +37,7 @@ object BetexActor {
   case class ProcessMarketEvents(marketEventsJSON: String)
 
   case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
+  case class GetRiskEvent(userId: Int,marketId:Long)
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
@@ -51,6 +52,13 @@ object BetexActor {
 
   case class MarketProb(marketId: Long, probType: MarketProbTypeEnum, probs: Map[Long, Double])
 
+  /**
+   * @param userId
+   * @param marketId
+   * @param marketExpectedProfit
+   * @paramrunnerIfwins [runnerId,ifWin]
+   */
+  case class RiskReport(userId:Int,marketId:Long,marketExpectedProfit: Double, runnerIfwins: Map[Long, Double])
 }
 
 case class BetexActor extends Actor {
@@ -145,6 +153,11 @@ case class BetexActor extends Actor {
           val orderedProb = for (runner <- market.runners) yield (runner.runnerId, marketProb.probs(runner.runnerId))
           val orderedProbMap = ListMap(orderedProb: _*)
           reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb.copy(probs = orderedProbMap))))
+        }
+
+        case e: GetRiskEvent => {
+          val riskReport = RiskReport(e.userId,e.marketId,0, Map())
+          reply(BetexResponseEvent(RESPONSE_OK, Option(riskReport)))
         }
 
         case e: ProcessMarketEvents => {

@@ -19,6 +19,7 @@ object BetexJSONParser {
       case d: List[IMarket] => toJSON(d)
       case d: IMarket => toJSON(d)
       case d: MarketProb => toJSON(d)
+      case d: RiskReport => toJSON(d)
     }
   }
 
@@ -84,7 +85,7 @@ object BetexJSONParser {
     for ((runnerId, runnerProb) <- marketProb.probs) {
       val runnerProbObj = new JSONObject()
       runnerProbObj.put("runnerId", runnerId)
-      runnerProbObj.put("probability", MathUtils.round(runnerProb*100,2))
+      runnerProbObj.put("probability", MathUtils.round(runnerProb * 100, 2))
       marketProbsArray.put(runnerProbObj)
     }
 
@@ -93,6 +94,24 @@ object BetexJSONParser {
     marketProbsObj.put("probType", marketProb.probType.toString)
     marketProbsObj.put("probabilities", marketProbsArray)
     marketProbsObj
+  }
+
+  private def toJSON(riskReport: RiskReport): JSONObject = {
+
+    val runnerIfWinsArray = new JSONArray()
+    for ((runnerId, ifWin) <- riskReport.runnerIfwins) {
+      val runnerIfWinObj = new JSONObject()
+      runnerIfWinObj.put("runnerId", runnerId)
+      runnerIfWinObj.put("ifWin", ifWin)
+      runnerIfWinsArray.put(runnerIfWinObj)
+    }
+    val riskReportObj = new JSONObject()
+     riskReportObj.put("userId", riskReport.userId)
+    riskReportObj.put("marketId", riskReport.marketId)
+    riskReportObj.put("marketExpectedProfit", riskReport.marketExpectedProfit)
+    riskReportObj.put("runnerIfwins", runnerIfWinsArray)
+    riskReportObj
+
   }
 
 }
