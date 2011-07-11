@@ -331,8 +331,8 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       get(classOf[String])
     assertEquals("""{"marketId":1,"probType":"WIN","probabilities":[{"runnerId":11,"probability":10},{"runnerId":12,"probability":30},{"runnerId":13,"probability":30},{"runnerId":14,"probability":30}]}""", marketProb)
   }
-  
-   @Test
+
+  @Test
   def get_market_prob_win_market_default_prob_type {
 
     /**Data setup*/
@@ -394,7 +394,7 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"marketId":1,"probType":"PLACE","probabilities":[{"runnerId":11,"probability":20},{"runnerId":12,"probability":60},{"runnerId":13,"probability":60},{"runnerId":14,"probability":60}]}""", marketProb)
 
   }
-  
+
   @Test
   def get_market_prob_place_market_default_prob {
     /**Data setup*/
@@ -457,8 +457,8 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"marketId":1,"probType":"SHOW","probabilities":[{"runnerId":11,"probability":30},{"runnerId":12,"probability":90},{"runnerId":13,"probability":90},{"runnerId":14,"probability":90}]}""", marketProb)
 
   }
-  
-   @Test
+
+  @Test
   def get_market_prob_show_market_default_prob {
     /**Data setup*/
     val createMarketResp = createMarketWithRunnersAndBets(3)
@@ -551,6 +551,40 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
       get(classOf[String])
     assertEquals("""{"status":"ERROR:Can't calculate probability for numOfWinners=4 and probType=PLACE."}""", marketProb)
 
+  }
+
+  /**Test scenarios for getRisk.*/
+  @Test
+  def get_risk_user_id_param_not_found {
+    val marketProb = resource().path("/getRisk").
+      queryParam("marketId", "1").
+      get(classOf[String])
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed: User id parameter not found."}""", marketProb)
+  }
+  @Test
+  def get_risk_market_id_param_not_found {
+    val marketProb = resource().path("/getRisk").
+      queryParam("userId", "123").
+      get(classOf[String])
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed: Market id parameter not found."}""", marketProb)
+  }
+
+  @Test
+  def get_risk_no_bets {
+    val marketProb = resource().path("/getRisk").
+      queryParam("userId", "123").
+      queryParam("marketId", "1").
+      get(classOf[String])
+    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":0,"runnerIfwins":[]}""", marketProb)
+  }
+
+  @Test
+  def get_risk_ {
+    val marketProb = resource().path("/getRisk").
+      queryParam("userId", "123").
+      queryParam("marketId", "1").
+      get(classOf[String])
+    assertEquals("""xxx""", marketProb)
   }
 
   /**Test scenarios for process Betex events*/
