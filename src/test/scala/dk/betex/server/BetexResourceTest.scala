@@ -553,6 +553,17 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
 
   }
 
+  @Test
+  def get_market_prob_check_runners_order {
+    createMarketRandomOrderOfRunners(1)
+
+    val marketProb = resource().path("/getMarketProbability").
+      queryParam("marketId", "1").
+      queryParam("probType", "PLACE").
+      get(classOf[String])
+    assertEquals("""{"marketId":1,"probType":"PLACE","probabilities":[{"runnerId":4,"probability":28.57},{"runnerId":1,"probability":28.57},{"runnerId":2,"probability":28.57},{"runnerId":7,"probability":28.57},{"runnerId":3,"probability":28.57},{"runnerId":5,"probability":28.57},{"runnerId":6,"probability":28.57}]}""", marketProb)
+  }
+
   /**Test scenarios for getRisk.*/
   @Test
   def get_risk_user_id_param_not_found {
@@ -571,20 +582,59 @@ class BetexResourceTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def get_risk_no_bets {
+    assertEquals("""{"status":"OK"}""", createMarket(1))
+
     val marketProb = resource().path("/getRisk").
       queryParam("userId", "123").
       queryParam("marketId", "1").
       get(classOf[String])
-    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":0,"runnerIfwins":[]}""", marketProb)
+    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":0,"runnerIfwins":[{"runnerId":11,"ifWin":0},{"runnerId":12,"ifWin":0}]}""", marketProb)
   }
 
   @Test
   def get_risk_ {
+    assertEquals("""{"status":"OK"}""", createMarketWithRunnersAndBets(1))
+
+    /**match bets.*/
+    val marketEvents = new JSONArray()
+
+    marketEvents.put(new JSONObject("""{"time":1234568,"eventType":"PLACE_BET",	
+				"betSize":8,
+				"betPrice":3,
+				"betType":"BACK",
+				"marketId":1,
+				"runnerId":11
+				} """))
+
+    marketEvents.put(new JSONObject("""{"time":1234568,"eventType":"PLACE_BET",	
+				"betSize":12,
+				"betPrice":3.1,
+				"betType":"LAY",
+				"marketId":1,
+				"runnerId":11
+				} """))
+
+    val marketEventsData = new JSONObject()
+    marketEventsData.put("userId", 124)
+    marketEventsData.put("marketEvents", marketEvents)
+    val response = resource().path("/processBetexEvents").`type`("application/json").post(classOf[String], marketEventsData.toString)
+    assertEquals("""{"status":"OK"}""", response)
+
+    /**check risk.*/
     val marketProb = resource().path("/getRisk").
       queryParam("userId", "123").
       queryParam("marketId", "1").
       get(classOf[String])
-    assertEquals("""xxx""", marketProb)
+    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":-0.84,"runnerIfwins":[{"runnerId":11,"ifWin":8.65},{"runnerId":12,"ifWin":-4},{"runnerId":13,"ifWin":-4},{"runnerId":14,"ifWin":-4}]}""", marketProb)
+  }
+
+  @Test
+  def get_risk_check_runners_order {
+    assertEquals("""{"status":"OK"}""", createMarketRandomOrderOfRunners(1))
+
+    val webResource = resource()
+    val risk = webResource.path("/getRisk").queryParam("userId", "123").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":0,"runnerIfwins":[{"runnerId":4,"ifWin":0},{"runnerId":1,"ifWin":0},{"runnerId":2,"ifWin":0},{"runnerId":7,"ifWin":0},{"runnerId":3,"ifWin":0},{"runnerId":5,"ifWin":0},{"runnerId":6,"ifWin":0}]}""", risk)
   }
 
   /**Test scenarios for process Betex events*/
