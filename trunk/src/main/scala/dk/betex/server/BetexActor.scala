@@ -37,7 +37,7 @@ object BetexActor {
   case class ProcessMarketEvents(marketEventsJSON: String)
 
   case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
-  case class GetRiskEvent(userId: Int,marketId:Long)
+  case class GetRiskEvent(userId: Int, marketId: Long)
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
@@ -56,9 +56,8 @@ object BetexActor {
    * @param userId
    * @param marketId
    * @param marketExpectedProfit
-   * @paramrunnerIfwins [runnerId,ifWin]
    */
-  case class RiskReport(userId:Int,marketId:Long,marketExpectedProfit: Double, runnerIfwins: Map[Long, Double])
+  case class RiskReport(userId: Int, marketId: Long, marketExpectedProfit: MarketExpectedProfit)
 }
 
 case class BetexActor extends Actor {
@@ -149,14 +148,29 @@ case class BetexActor extends Actor {
             case _ => throw new UnsupportedOperationException("Can't calculate probability for numOfWinners=%s and probType=%s.".format(market.numOfWinners, marketProbType))
           }
 
-          /**return runner prices in the same order as market runners.*/
+          /**return market probabilities in the same order as market runners.*/
           val orderedProb = for (runner <- market.runners) yield (runner.runnerId, marketProb.probs(runner.runnerId))
           val orderedProbMap = ListMap(orderedProb: _*)
           reply(BetexResponseEvent(RESPONSE_OK, Option(marketProb.copy(probs = orderedProbMap))))
         }
 
         case e: GetRiskEvent => {
-          val riskReport = RiskReport(e.userId,e.marketId,0, Map())
+          val market = betex.findMarket(e.marketId)
+          val userMatchedBets = market.getBets(e.userId, true)
+
+          val bestPrices = market.getBestPrices.mapValues(prices => prices._1.price -> prices._2.price)
+          val marketProbValue = ProbabilityCalculator.calculate(bestPrices, market.numOfWinners)
+
+          val commision = 0.05
+          val bank = 100
+
+          val marketExpectedProfit = ExpectedProfitCalculator.calculate(userMatchedBets, marketProbValue, commision, bank)
+
+          /**return risk ifwins in the same order as market runners.*/
+          val orderedIfWins: List[Tuple2[Long, Double]] = for (runner <- market.runners) yield (runner.runnerId, marketExpectedProfit.runnersIfWin(runner.runnerId))
+          val orderedIfWinsMap = ListMap(orderedIfWins: _*)
+
+          val riskReport = RiskReport(e.userId, e.marketId, marketExpectedProfit.copy(runnersIfWin = orderedIfWinsMap))
           reply(BetexResponseEvent(RESPONSE_OK, Option(riskReport)))
         }
 

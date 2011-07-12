@@ -99,16 +99,16 @@ object BetexJSONParser {
   private def toJSON(riskReport: RiskReport): JSONObject = {
 
     val runnerIfWinsArray = new JSONArray()
-    for ((runnerId, ifWin) <- riskReport.runnerIfwins) {
+    for ((runnerId, ifWin) <- riskReport.marketExpectedProfit.runnersIfWin) {
       val runnerIfWinObj = new JSONObject()
       runnerIfWinObj.put("runnerId", runnerId)
-      runnerIfWinObj.put("ifWin", ifWin)
+      runnerIfWinObj.put("ifWin", MathUtils.round(ifWin, 2))
       runnerIfWinsArray.put(runnerIfWinObj)
     }
     val riskReportObj = new JSONObject()
      riskReportObj.put("userId", riskReport.userId)
     riskReportObj.put("marketId", riskReport.marketId)
-    riskReportObj.put("marketExpectedProfit", riskReport.marketExpectedProfit)
+    riskReportObj.put("marketExpectedProfit", MathUtils.round(riskReport.marketExpectedProfit.marketExpectedProfit, 2))
     riskReportObj.put("runnerIfwins", runnerIfWinsArray)
     riskReportObj
 
