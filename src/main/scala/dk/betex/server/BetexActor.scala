@@ -11,9 +11,9 @@ import dk.betex.eventcollector.eventprocessor._
 import scala.collection.immutable.ListMap
 import dk.betex.api.IMarket._
 import BetexActor.MarketProbTypeEnum.MarketProbTypeEnum
-import dk.bettingai.marketsimulator.risk._
+import dk.betting.risk.prob._
+import dk.betting.risk.liability._
 import scala.collection._
-import dk.bettingai.risk.prob._
 
 /**
  * This actor processes all betex requests in a sequence.
@@ -27,6 +27,8 @@ object BetexActor {
   val RESPONSE_OK = "OK"
   val RESPONSE_ERROR = "ERROR"
 
+  /**Request events.*/
+
   case class CreateMarketEvent(marketId: Long, marketName: String, eventName: String, numOfWinners: Int, marketTime: Date, runners: List[IRunner])
   case object GetMarketsEvent
   case class GetMarketEvent(marketId: Long)
@@ -38,6 +40,8 @@ object BetexActor {
 
   case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
   case class GetRiskEvent(userId: Int, marketId: Long)
+  case class HedgeEvent(userId:Int, marketId:Long, simulate:Boolean)
+  /**Response events.*/
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
 
@@ -174,6 +178,9 @@ case class BetexActor extends Actor {
           reply(BetexResponseEvent(RESPONSE_OK, Option(riskReport)))
         }
 
+        case e:HedgeEvent => {
+          reply(BetexResponseEvent(RESPONSE_OK))
+        }
         case e: ProcessMarketEvents => {
           val marketEventsObj = new JSONObject(e.marketEventsJSON)
           val userId = marketEventsObj.get("userId").toString.toInt

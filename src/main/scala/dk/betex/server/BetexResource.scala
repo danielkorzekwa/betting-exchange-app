@@ -127,14 +127,25 @@ class BetexResource {
   @GET
   @Path("/getRisk")
   @Produces(Array("application/json"))
-  def getRisk(@QueryParam("userId") userId: Int,@QueryParam("marketId") marketId: Long): String = {
+  def getRisk(@QueryParam("userId") userId: Int, @QueryParam("marketId") marketId: Long): String = {
     process {
-      require(userId>0,"User id parameter not found.")
-      require(marketId>0,"Market id parameter not found.")
-      new GetRiskEvent(userId,marketId) 
-      }
+      require(userId > 0, "User id parameter not found.")
+      require(marketId > 0, "Market id parameter not found.")
+      new GetRiskEvent(userId, marketId)
+    }
   }
 
+  @GET
+  @Path("/hedge")
+  @Produces(Array("application/json"))
+  def hedge(@QueryParam("userId") userId: Int, @QueryParam("marketId") marketId: Long, @QueryParam("simulate") simulate: Boolean): String = {
+    process {
+      require(userId > 0, "User id parameter not found.")
+      require(marketId > 0, "Market id parameter not found.")
+      new HedgeEvent(userId,marketId,simulate)
+    }
+  }
+  
   @POST
   @Path("/processBetexEvents")
   @Consumes(Array("application/json"))
