@@ -11,9 +11,10 @@ import dk.betex.eventcollector.eventprocessor._
 import scala.collection.immutable.ListMap
 import dk.betex.api.IMarket._
 import BetexActor.MarketProbTypeEnum.MarketProbTypeEnum
-import dk.betting.risk.prob._
-import dk.betting.risk.liability._
+import dk.betex.risk.prob._
+import dk.betex.risk.liability._
 import scala.collection._
+import dk.betex.risk.hedge._
 
 /**
  * This actor processes all betex requests in a sequence.
@@ -40,7 +41,7 @@ object BetexActor {
 
   case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
   case class GetRiskEvent(userId: Int, marketId: Long)
-  case class HedgeEvent(userId:Int, marketId:Long, simulate:Boolean)
+  case class HedgeEvent(userId: Int, marketId: Long, runnerId: Long, simulate: Boolean)
   /**Response events.*/
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
@@ -178,8 +179,20 @@ case class BetexActor extends Actor {
           reply(BetexResponseEvent(RESPONSE_OK, Option(riskReport)))
         }
 
-        case e:HedgeEvent => {
-          reply(BetexResponseEvent(RESPONSE_OK))
+        case e: HedgeEvent => {
+
+          val market = betex.findMarket(e.marketId)
+          val bestPrices = market.getBestPrices.mapValues(prices => prices._1.price -> prices._2.price)
+          val userMatchedBets = market.getBets(e.userId, true)
+
+          val hedgeBet = HedgeBetsCalculator.calculateHedgeBet(userMatchedBets, bestPrices, e.runnerId)
+          hedgeBet match {
+            case Some(hedgeBet) => market.placeBet(nextBetId(), e.userId, hedgeBet.betSize, hedgeBet.betPrice, hedgeBet.betType, hedgeBet.runnerId, 0)
+            case _ =>
+          }
+
+          reply(BetexResponseEvent(RESPONSE_OK, hedgeBet))
+
         }
         case e: ProcessMarketEvents => {
           val marketEventsObj = new JSONObject(e.marketEventsJSON)

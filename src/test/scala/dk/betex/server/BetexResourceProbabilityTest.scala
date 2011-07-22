@@ -10,10 +10,10 @@ import org.codehaus.jettison.json._
  * @author korzekwad
  */
 class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
- 
+
   private val testUtil = new BetexResourceTestUtil(resource())
   import testUtil._
-  
+
   /**Tests for getMarketProbability*/
   @Test
   def get_market_prob_market_not_found {
@@ -39,8 +39,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   def get_market_prob_win_market_win_prob {
 
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,1)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 1)
 
     /**Check market probability.*/
 
@@ -55,9 +54,8 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   def get_market_prob_win_market_default_prob_type {
 
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,1)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
-
+    createMarketWithRunnersAndBets(123, 1)
+   
     /**Check market probability.*/
 
     val marketProb = resource().path("/getMarketProbability").
@@ -69,8 +67,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_win_market_place_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,1)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 1)
 
     /**Check market probability.*/
 
@@ -85,8 +82,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_win_market_show_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,1)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 1)
 
     /**Check market probability.*/
 
@@ -101,8 +97,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_place_market_place_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,2)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 2)
 
     /**Check market probability.*/
 
@@ -117,8 +112,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_place_market_default_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,2)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 2)
 
     /**Check market probability.*/
 
@@ -132,8 +126,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_place_market_show_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,2)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 2)
 
     /**Check market probability.*/
 
@@ -148,8 +141,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_place_market_win_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,2)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 2)
 
     /**Check market probability.*/
 
@@ -164,8 +156,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_market_show_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,3)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 3)
 
     /**Check market probability.*/
 
@@ -180,8 +171,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_market_default_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,3)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 3)
 
     /**Check market probability.*/
 
@@ -195,8 +185,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_market_win_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,3)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 3)
 
     /**Check market probability.*/
 
@@ -211,8 +200,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_market_place_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,3)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 3)
 
     /**Check market probability.*/
 
@@ -227,8 +215,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_4_winners_market_show_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,4)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 4)
 
     /**Check market probability.*/
 
@@ -243,8 +230,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_4_winners_market_win_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,4)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 4)
 
     /**Check market probability.*/
 
@@ -259,8 +245,7 @@ class BetexResourceProbabilityTest extends JerseyTest("dk.betex.server") {
   @Test
   def get_market_prob_show_4_winners_market_place_prob {
     /**Data setup*/
-    val createMarketResp = createMarketWithRunnersAndBets(123,4)
-    assertEquals("""{"status":"OK"}""", createMarketResp)
+    createMarketWithRunnersAndBets(123, 4)
 
     /**Check market probability.*/
 

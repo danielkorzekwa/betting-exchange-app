@@ -5,6 +5,7 @@ import dk.betex.api.IMarket._
 import org.codehaus.jettison.json._
 import BetexActor._
 import org.apache.commons.math.util._
+import dk.betex.risk.hedge.HedgeBetsCalculator._
 
 /**
  * Converts betex data to json object.
@@ -20,6 +21,7 @@ object BetexJSONParser {
       case d: IMarket => toJSON(d)
       case d: MarketProb => toJSON(d)
       case d: RiskReport => toJSON(d)
+      case d: HedgeBet => toJSON(d)
     }
   }
 
@@ -112,6 +114,16 @@ object BetexJSONParser {
     riskReportObj.put("runnerIfwins", runnerIfWinsArray)
     riskReportObj
 
+  }
+  
+  private def toJSON(hedgeBet: HedgeBet): JSONObject = {
+    val hedgeBetsOBj = new JSONObject()
+    hedgeBetsOBj.put("betSize",MathUtils.round(hedgeBet.betSize,2))
+    hedgeBetsOBj.put("betPrice",hedgeBet.betPrice)
+    hedgeBetsOBj.put("betType",hedgeBet.betType)
+    hedgeBetsOBj.put("marketId",hedgeBet.marketId)
+    hedgeBetsOBj.put("runnerId",hedgeBet.runnerId)
+    hedgeBetsOBj
   }
 
 }
