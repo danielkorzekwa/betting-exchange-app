@@ -59,7 +59,7 @@ class BetexResourceTestUtil(webResource: WebResource) {
 				}""".format(numOfWinners)))
 
     marketEvents.put(new JSONObject("""{"time":1234568,"eventType":"PLACE_BET",	
-				"betSize":10,
+				"betSize":16,
 				"betPrice":3,
 				"betType":"LAY",
 				"marketId":1,

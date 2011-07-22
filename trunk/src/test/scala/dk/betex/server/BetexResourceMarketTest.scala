@@ -18,31 +18,26 @@ class BetexResourceMarketTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def create_market_succces() {
-    val webResource = resource()
-    val responseMsg = createMarket(123)
-    assertEquals("""{"status":"OK"}""", responseMsg)
-
-    val markets = webResource.path("/getMarkets").get(classOf[String])
+    
+    createMarket(123)
+   
+    val markets = resource().path("/getMarkets").get(classOf[String])
     assertEquals("""{"markets":[{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
   }
 
   @Test
   def create_two_market2_succces() {
-    val webResource = resource()
-    val responseMsg1 = createMarket(123)
-    assertEquals("""{"status":"OK"}""", responseMsg1)
-
-    val responseMsg2 = createMarket(124)
-    assertEquals("""{"status":"OK"}""", responseMsg2)
-
-    val markets = webResource.path("/getMarkets").get(classOf[String])
+  createMarket(123)
+  createMarket(124)
+    
+    val markets = resource().path("/getMarkets").get(classOf[String])
     assertEquals("""{"markets":[{"marketId":124,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]},{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}]}""", markets)
   }
 
   @Test
   def create_market_failed_missing_market_id() {
-    val webResource = resource()
-    val responseMsg = webResource.path("/createMarket").
+   
+    val responseMsg = resource().path("/createMarket").
       queryParam("marketName", "Barcelona - Real Madryt").
       queryParam("eventName", "Spanish Soccer").
       queryParam("numOfWinners", "1").
@@ -55,17 +50,16 @@ class BetexResourceMarketTest extends JerseyTest("dk.betex.server") {
   /**Tests for getMarkets.*/
   @Test
   def get_markets_no_markets_exist() {
-    val webResource = resource()
-    val markets = webResource.path("/getMarkets").get(classOf[String])
+   
+    val markets = resource().path("/getMarkets").get(classOf[String])
     assertEquals("""{"markets":[]}""", markets)
   }
 
   /**Tests for getMarket.*/
   @Test
   def get_market() {
-    val responseMsg1 = createMarket(123)
-    assertEquals("""{"status":"OK"}""", responseMsg1)
-
+    createMarket(123)
+   
     val market = resource().path("/getMarket").
       queryParam("marketId", "123").get(classOf[String])
     assertEquals("""{"marketId":123,"marketName":"Man Utd - Arsenal","eventName":"English Soccer","numOfWinners":1,"marketTime":1000,"runners":[{"runnerId":11,"runnerName":"Man Utd"},{"runnerId":12,"runnerName":"Arsenal"}]}""", market)
@@ -73,8 +67,8 @@ class BetexResourceMarketTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def get_market_doesnt_exist() {
-    val webResource = resource()
-    val market = webResource.path("/getMarket").
+   
+    val market = resource().path("/getMarket").
       queryParam("marketId", "123").get(classOf[String])
     assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=123"}""", market)
   }
@@ -89,9 +83,8 @@ class BetexResourceMarketTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def remove_market {
-    val responseMsg1 = createMarket(123)
-    assertEquals("""{"status":"OK"}""", responseMsg1)
-
+    createMarket(123)
+  
     val removeMarketStatus = resource().path("/removeMarket").
       queryParam("marketId", "123").get(classOf[String])
     assertEquals("""{"status":"OK"}""", removeMarketStatus)

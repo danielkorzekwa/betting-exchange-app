@@ -51,7 +51,7 @@ class BetexResourceRiskTest extends JerseyTest("dk.betex.server") {
       queryParam("userId", "123").
       queryParam("marketId", "1").
       get(classOf[String])
-    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":-0.84,"runnerIfwins":[{"runnerId":11,"ifWin":8.65},{"runnerId":12,"ifWin":-4},{"runnerId":13,"ifWin":-4},{"runnerId":14,"ifWin":-4}]}""", riskResp)
+    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":-2.73,"runnerIfwins":[{"runnerId":11,"ifWin":8.74},{"runnerId":12,"ifWin":-4},{"runnerId":13,"ifWin":-4},{"runnerId":14,"ifWin":-4}]}""", riskResp)
   }
 
   @Test
@@ -67,8 +67,14 @@ class BetexResourceRiskTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def hedge_market_id_param_not_found {
-    val response = resource().path("/hedge").queryParam("userId", "123").get(classOf[String])
+    val response = resource().path("/hedge").queryParam("userId", "123").queryParam("runnerId", "1").get(classOf[String])
     assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed: Market id parameter not found."}""", response)
+  }
+
+  @Test
+  def hedge_runner_id_param_not_found {
+    val response = resource().path("/hedge").queryParam("userId", "123").queryParam("marketId", "1").get(classOf[String])
+    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed: Runner id parameter not found."}""", response)
   }
 
   @Test
@@ -79,28 +85,32 @@ class BetexResourceRiskTest extends JerseyTest("dk.betex.server") {
 
   @Test
   def hedge_simulate_param_not_found {
-    
+
     createMarketWithRunnersAndBets(123, 1)
     matchBets(124)
 
-      /**check risk.*/
+    /**check risk.*/
     val riskResp = resource().path("/getRisk").
-      queryParam("userId", "123").
+      queryParam("userId", "124").
       queryParam("marketId", "1").
       get(classOf[String])
-    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":-0.84,"runnerIfwins":[{"runnerId":11,"ifWin":8.65},{"runnerId":12,"ifWin":-4},{"runnerId":13,"ifWin":-4},{"runnerId":14,"ifWin":-4}]}""", riskResp)
-  
+    assertEquals("""{"userId":124,"marketId":1,"marketExpectedProfit":2.5,"runnerIfwins":[{"runnerId":11,"ifWin":-9.2},{"runnerId":12,"ifWin":3.8},{"runnerId":13,"ifWin":3.8},{"runnerId":14,"ifWin":3.8}]}""", riskResp)
+
     /**hedge.*/
-    val hedgeResponse = resource().path("/hedge").queryParam("userId", "123").queryParam("marketId", "1").get(classOf[String])
-    assertEquals("""{"status":"INPUT_VALIDATION_ERROR:requirement failed: User id parameter not found."}""", hedgeResponse)
-    
-      /**check risk.*/
+    val hedgeResponse = resource().path("/hedge").queryParam("userId", "124").queryParam("marketId", "1").queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("""{"betSize":4.4,"betPrice":3,"betType":"BACK","marketId":1,"runnerId":11}""", hedgeResponse)
+
+    /**check risk.*/
     val riskResp2 = resource().path("/getRisk").
-      queryParam("userId", "123").
+      queryParam("userId", "124").
       queryParam("marketId", "1").
       get(classOf[String])
-    assertEquals("""{"userId":123,"marketId":1,"marketExpectedProfit":-0.84,"runnerIfwins":[{"runnerId":11,"ifWin":8.65},{"runnerId":12,"ifWin":-4},{"runnerId":13,"ifWin":-4},{"runnerId":14,"ifWin":-4}]}""", riskResp2)
-  
+    assertEquals("""{"userId":124,"marketId":1,"marketExpectedProfit":-0.4,"runnerIfwins":[{"runnerId":11,"ifWin":-0.4},{"runnerId":12,"ifWin":-0.4},{"runnerId":13,"ifWin":-0.4},{"runnerId":14,"ifWin":-0.4}]}""", riskResp2)
+
+    /**hedge again.*/
+    val hedgeResponse2 = resource().path("/hedge").queryParam("userId", "124").queryParam("marketId", "1").queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("""{"status":"OK"}""", hedgeResponse2)
+
   }
 
   @Test
