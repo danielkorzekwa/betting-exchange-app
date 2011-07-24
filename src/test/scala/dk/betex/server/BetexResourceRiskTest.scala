@@ -84,6 +84,35 @@ class BetexResourceRiskTest extends JerseyTest("dk.betex.server") {
   }
 
   @Test
+  def hedge_market_not_found {
+    createMarketWithRunnersAndBets(123, 1)
+    matchBets(124)
+
+    /**hedge.*/
+    val hedgeResponse = resource().path("/hedge").queryParam("userId", "124").queryParam("marketId", "2").queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("""{"status":"ERROR:requirement failed: Market not found for marketId=2"}""", hedgeResponse)
+  }
+
+  @Test
+  def hedge_runner_not_found {
+    createMarketWithRunnersAndBets(123, 1)
+    matchBets(124)
+
+    /**hedge.*/
+    val hedgeResponse = resource().path("/hedge").queryParam("userId", "124").queryParam("marketId", "1").queryParam("runnerId", "15").get(classOf[String])
+    assertEquals("""{"status":"ERROR:requirement failed: Runner not found:15"}""", hedgeResponse)
+  }
+
+  @Test
+  def hedge_no_user_bets {
+    createMarketWithRunnersAndBets(123, 1)
+
+    /**hedge.*/
+    val hedgeResponse = resource().path("/hedge").queryParam("userId", "124").queryParam("marketId", "1").queryParam("runnerId", "11").get(classOf[String])
+    assertEquals("""{"status":"OK"}""", hedgeResponse)
+  }
+
+  @Test
   def hedge_simulate_param_not_found {
 
     createMarketWithRunnersAndBets(123, 1)
@@ -112,14 +141,4 @@ class BetexResourceRiskTest extends JerseyTest("dk.betex.server") {
     assertEquals("""{"status":"OK"}""", hedgeResponse2)
 
   }
-
-  @Test
-  def hedge_simulate_param_is_false {
-
-  }
-
-  @Test
-  def hedge_simulate_param_is_true {
-  }
-
 }
