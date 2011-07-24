@@ -41,7 +41,7 @@ object BetexActor {
 
   case class GetMarketProbEvent(marketId: Long, marketProbType: Option[MarketProbTypeEnum] = None)
   case class GetRiskEvent(userId: Int, marketId: Long)
-  case class HedgeEvent(userId: Int, marketId: Long, runnerId: Long, simulate: Boolean)
+  case class HedgeEvent(userId: Int, marketId: Long, runnerId: Long)
   /**Response events.*/
 
   case class BetexResponseEvent(status: String, data: Option[Any] = None)
