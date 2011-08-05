@@ -1,0 +1,10 @@
+***********************************************************************************
+*Betting Exchange Server Copyright 2011 Daniel Korzekwa(http://danmachine.com)    *
+*Project homepage: http://code.google.com/p/betting-exchange-app/                 *
+*Licenced under Apache License 2.0(http://www.apache.org/licenses/LICENSE-2.0)    *
+***********************************************************************************
+
+This betting exchange is an educational and research project where virtual money is used only.
+
+WADL is located at BETEX_SERVER_URL/application.wadl
+What is WADL? - http://en.wikipedia.org/wiki/Web_Application_Description_Language
